@@ -1,0 +1,4 @@
+GitHub[000001] 1 [     1 - request] map["url":"https://api.github.com/user/starred"] (0s)
+GitHub[000002] 1 [     1 - response] map["status":"OK" "url":"https://api.github.com/user/starred"] (1.142817s)
+GitHub[000003] 1 [     1 - scraped] map["url":"https://api.github.com/user/starred"] (1.1664843s)
+
