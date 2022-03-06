@@ -8,31 +8,31 @@ import (
 	"log"
 )
 
-// RepoStars 项目主页.
-type RepoStars struct {
+// UsersByRepo 列出已为存储库加注星标的人员.
+// GitHub API docs url:
+// https://docs.github.com/cn/rest/reference/activity#list-stargazers
+type UsersByRepo struct {
 	Colly *colly.Collector
-	Index int
+	index int
 }
 
-// Callbacks 爬取回调.
-func (rs *RepoStars) Callbacks() {
-	rs.Index = 0
+// Callbacks 爬虫回调函数.
+func (ur *UsersByRepo) Callbacks() {
+	ur.index = 0
 	auth := user.NewAuth()
-	rs.Colly.OnRequest(func(r *colly.Request) {
+	ur.Colly.OnRequest(func(r *colly.Request) {
 		// GitHub's docs:
 		// By default, all requests to https://api.github.com receive the v3 version of the REST API.
 		// We encourage you to explicitly request this version via the Accept header.
 		r.Headers.Add("Accept", "application/vnd.github.v3+json")
-		r.Headers = auth.AddToken(r.Headers, rs.Index)
+		r.Headers = auth.AddToken(r.Headers, ur.index)
 	})
 
-	rs.Colly.OnResponse(func(resp *colly.Response) {
+	ur.Colly.OnResponse(func(resp *colly.Response) {
 		log.Printf("%d, %s", resp.StatusCode, resp.Body)
-		// body := make(map[string]interface{})
 		body, err := utils.JsonUnmarshalBody(resp.Body)
-		// err := json.Unmarshal(resp.Body, &body)
 		if err != nil {
-			log.Printf("err: Failed to unmarshal the json. %s", err)
+			log.Printf("err: Failed to unmarshal the json: %s", err)
 			return
 		}
 

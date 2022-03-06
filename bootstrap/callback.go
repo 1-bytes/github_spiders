@@ -7,9 +7,13 @@ import (
 
 // SetupCallback 初始化各个爬虫 Collector 的回调.
 func SetupCallback(c *colly.Collector) {
-	homePage := callbacks.RepoStars{
+	reposByUser := callbacks.ReposByUser{
 		Colly: c,
 	}
-	homePage.Callbacks()
+	reposByUser.Callbacks()
 
+	// usersByRepo := callbacks.UsersByRepo{
+	// 	Colly: c,
+	// }
+	// usersByRepo.Callbacks()
 }

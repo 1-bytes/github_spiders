@@ -8,6 +8,4 @@ type GitHubUser struct {
 	Users []User
 }
 
-// type JsonBody map[string]interface{}
-//
-// type SliceBody []JsonBody
+const DefaultPerPage = 30
