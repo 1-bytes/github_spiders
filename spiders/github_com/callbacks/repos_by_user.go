@@ -3,12 +3,10 @@ package callbacks
 import (
 	"github.com/gocolly/colly"
 	"github_spiders/pkg/utils"
+	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
 	"github_spiders/spiders/types"
 	"log"
-	"net/http"
-	"strconv"
-	"sync/atomic"
 )
 
 // ReposByUser 列出用户已加星标的存储库.
@@ -33,9 +31,9 @@ func (ru *ReposByUser) Callbacks() {
 	})
 
 	collector.ReposByUserC.OnResponse(func(resp *colly.Response) {
-		if resp.StatusCode != http.StatusOK {
-			// TODO:// 回头再处理这个问题，状态码为非200状态时，有可能是需要更换帐号的 token 了 ..
-		}
+		// if resp.StatusCode != http.StatusOK {
+		// TODO:// 回头再处理这个问题，状态码为非200状态时，有可能是需要更换帐号的 token 了 ..
+		// }
 		repos, err := utils.JsonUnmarshalBody(resp.Body)
 		if err != nil {
 			log.Printf("err: Failed to unmarshal the json: %s", err)
@@ -48,36 +46,19 @@ func (ru *ReposByUser) Callbacks() {
 		}
 
 		for _, repo := range repos {
-			log.Printf("【New Repositorie】 Name:%s, URL:%s",
-				repo["full_name"], repo["html_url"])
+			repoName := repo["full_name"]
+			starViewUrl := repo["stargazers_url"]
+			starCount := repo["stargazers_count"]
+			log.Printf("【New Repo】 Name:%s, StarCount:%v, URL:%s",
+				repoName, starCount, starViewUrl)
+			_ = collector.UsersByRepoC.Visit(starViewUrl.(string))
 		}
 
 		// 下一页
-		url := ru.getNextPageUrl(resp.Request, repoLen)
+		url := common.GetNextPageUrl(resp.Request, repoLen)
 		if url == "" {
 			return
 		}
 		_ = collector.ReposByUserC.Visit(url)
 	})
-}
-
-// getNextPageUrl 获取下一页要请求的链接.
-func (ru *ReposByUser) getNextPageUrl(r *colly.Request, dataLen int) string {
-	params := r.URL.Query()
-	perPage, err := strconv.Atoi(params.Get("per_page"))
-	if err != nil {
-		perPage = types.DefaultPerPage
-	}
-	if dataLen < perPage {
-		return ""
-	}
-	pageStr := params.Get("page")
-	if pageStr == "" {
-		pageStr = "1"
-	}
-	page, _ := strconv.ParseInt(pageStr, 10, 64)
-	atomic.AddInt64(&page, 1)
-	params.Set("page", strconv.FormatInt(page, 10))
-	r.URL.RawQuery = params.Encode()
-	return r.URL.String()
 }
