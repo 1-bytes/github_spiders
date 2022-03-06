@@ -1,5 +1,9 @@
 package types
 
+import "github.com/gocolly/colly"
+
+const DefaultPerPage = 30 // 默认每页数据条数
+
 type User struct {
 	Token string
 }
@@ -8,4 +12,7 @@ type GitHubUser struct {
 	Users []User
 }
 
-const DefaultPerPage = 30
+type GitHubCollector struct {
+	ReposByUserC *colly.Collector
+	UsersByRepoC *colly.Collector
+}
