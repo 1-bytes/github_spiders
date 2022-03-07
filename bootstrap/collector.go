@@ -6,8 +6,13 @@ import (
 	"github_spiders/spiders/github_com"
 )
 
+var collector *colly.Collector
+
 // SetupCollector 初始化爬虫收集器.
-func SetupCollector() *colly.Collector {
+func SetupCollector() {
+	if collector != nil {
+		return
+	}
 	var (
 		domain      = config.GetString("spiders.github.domain", "api.github.com")
 		userAgent   = config.GetString("spiders.github.user_agent", "")
@@ -26,5 +31,13 @@ func SetupCollector() *colly.Collector {
 		},
 		Socks5: socks5,
 	}
-	return cfg.Create()
+	collector = cfg.Create()
+}
+
+// GetCollector 获取 colly.Collector.
+func GetCollector() *colly.Collector {
+	if collector == nil {
+		SetupCollector()
+	}
+	return collector
 }
