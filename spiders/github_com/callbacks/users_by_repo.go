@@ -2,6 +2,7 @@ package callbacks
 
 import (
 	"github.com/gocolly/colly"
+	"github_spiders/pkg/colly/queue"
 	"github_spiders/pkg/utils"
 	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
@@ -22,6 +23,7 @@ func (ur *UsersByRepo) Callbacks() {
 	ur.index = 0
 	auth := user.NewAuth()
 	collector := ur.Colly
+	id := int(collector.UsersByRepoC.ID)
 	collector.UsersByRepoC.OnRequest(func(r *colly.Request) {
 		// GitHub's docs:
 		// By default, all requests to https://api.github.com receive the v3 version of the REST API.
@@ -54,6 +56,8 @@ func (ur *UsersByRepo) Callbacks() {
 		if url == "" {
 			return
 		}
-		_ = collector.UsersByRepoC.Visit(url)
+		// _ = collector.UsersByRepoC.Visit(url)
+		queue := queue.GetInstance(id).GetQueue()
+		queue.AddURL(url)
 	})
 }

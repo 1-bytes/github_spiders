@@ -1,7 +1,9 @@
 package callbacks
 
 import (
+	"fmt"
 	"github.com/gocolly/colly"
+	"github_spiders/pkg/colly/queue"
 	"github_spiders/pkg/utils"
 	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
@@ -22,6 +24,7 @@ func (ru *ReposByUser) Callbacks() {
 	ru.Index = 0
 	auth := user.NewAuth()
 	collector := ru.Colly
+	id := int(collector.ReposByUserC.ID)
 	collector.ReposByUserC.OnRequest(func(r *colly.Request) {
 		// GitHub's docs:
 		// By default, all requests to https://api.github.com receive the v3 version of the REST API.
@@ -59,6 +62,14 @@ func (ru *ReposByUser) Callbacks() {
 		if url == "" {
 			return
 		}
-		_ = collector.ReposByUserC.Visit(url)
+		// _ = collector.ReposByUserC.Visit(url)
+		queue := queue.GetInstance(id).GetQueue()
+		queue.AddURL(url)
+	})
+
+	collector.ReposByUserC.OnError(func(resp *colly.Response, err error) {
+		fmt.Println(resp.StatusCode)
+		fmt.Println(resp.Body)
+		fmt.Println(err)
 	})
 }

@@ -16,3 +16,11 @@ type GitHubCollector struct {
 	ReposByUserC *colly.Collector
 	UsersByRepoC *colly.Collector
 }
+
+// CollyRedisConfig colly redis 配置信息.
+type CollyRedisConfig struct {
+	Address  string
+	Password string
+	DB       int
+	Prefix   string
+}

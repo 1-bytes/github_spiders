@@ -6,7 +6,9 @@ import (
 	"github_spiders/spiders/github_com"
 )
 
-var collector *colly.Collector
+var (
+	collector *colly.Collector
+)
 
 // SetupCollector 初始化爬虫收集器.
 func SetupCollector() {
@@ -35,8 +37,5 @@ func SetupCollector() {
 
 // GetCollector 获取 colly.Collector.
 func GetCollector() *colly.Collector {
-	if collector == nil {
-		SetupCollector()
-	}
 	return collector
 }
