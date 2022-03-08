@@ -12,7 +12,7 @@ func GetNextPageUrl(r *colly.Request, dataLen int) string {
 	params := r.URL.Query()
 	perPage, err := strconv.Atoi(params.Get("per_page"))
 	if err != nil {
-		perPage = types.DefaultPerPage
+		perPage = types.MaxPerPage
 	}
 	if dataLen < perPage {
 		return ""
