@@ -2,7 +2,7 @@ package types
 
 import "github.com/gocolly/colly"
 
-const DefaultPerPage = 30 // 默认每页数据条数
+const MaxPerPage = 100 // 每页数据最大条数
 
 type User struct {
 	Token string

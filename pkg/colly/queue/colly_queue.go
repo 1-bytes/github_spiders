@@ -12,7 +12,6 @@ var (
 )
 
 type collyQueued struct {
-	// ID int // 标识属于哪个 collector
 	Queue *queue.Queue
 }
 
@@ -37,10 +36,12 @@ func GetInstance(id int) *collyQueued {
 	}()
 }
 
+// NewQueue 获取一个新的队列.
 func (q *collyQueued) NewQueue(threads int, storage *redisstorage.Storage) {
 	q.Queue, _ = queue.New(threads, storage)
 }
 
+// GetQueue 获取指定单例的队列.
 func (q *collyQueued) GetQueue() *queue.Queue {
 	return q.Queue
 }

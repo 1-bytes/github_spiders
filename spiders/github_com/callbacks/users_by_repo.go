@@ -1,6 +1,7 @@
 package callbacks
 
 import (
+	"fmt"
 	"github.com/gocolly/colly"
 	"github_spiders/pkg/colly/queue"
 	"github_spiders/pkg/utils"
@@ -23,7 +24,8 @@ func (ur *UsersByRepo) Callbacks() {
 	ur.index = 0
 	auth := user.NewAuth()
 	collector := ur.Colly
-	id := int(collector.UsersByRepoC.ID)
+	usersByRepoId := int(collector.UsersByRepoC.ID)
+	reposByUserId := int(collector.ReposByUserC.ID)
 	collector.UsersByRepoC.OnRequest(func(r *colly.Request) {
 		// GitHub's docs:
 		// By default, all requests to https://api.github.com receive the v3 version of the REST API.
@@ -49,7 +51,8 @@ func (ur *UsersByRepo) Callbacks() {
 			starViewUrl := u["url"].(string) + "/starred"
 			log.Printf("【New User】 Name:%s, URL:%s",
 				userName, starViewUrl)
-			_ = collector.ReposByUserC.Visit(starViewUrl)
+			// _ = collector.ReposByUserC.Visit(starViewUrl)
+			queue.GetInstance(reposByUserId).GetQueue().AddURL(starViewUrl)
 		}
 
 		url := common.GetNextPageUrl(resp.Request, userLen)
@@ -57,7 +60,6 @@ func (ur *UsersByRepo) Callbacks() {
 			return
 		}
 		// _ = collector.UsersByRepoC.Visit(url)
-		queue := queue.GetInstance(id).GetQueue()
-		queue.AddURL(url)
+		queue.GetInstance(usersByRepoId).GetQueue().AddURL(url)
 	})
 }
