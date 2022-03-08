@@ -10,14 +10,12 @@ var collector *colly.Collector
 
 // SetupCollector 初始化爬虫收集器.
 func SetupCollector() {
-	if collector != nil {
-		return
-	}
 	var (
 		domain      = config.GetString("spiders.github.domain", "api.github.com")
 		userAgent   = config.GetString("spiders.github.user_agent", "")
-		parallelism = config.GetInt("parallelism", 3)
+		parallelism = config.GetInt("spiders.github.parallelism", 3)
 		socks5      = config.GetString("spiders.github.socks5", nil)
+		cacheDir    = config.GetString("spiders.github.cache_dir", "./runtime/cache")
 	)
 
 	cfg := github_com.Spider{
@@ -29,7 +27,8 @@ func SetupCollector() {
 			DomainRegexp: domain,
 			Parallelism:  parallelism,
 		},
-		Socks5: socks5,
+		Socks5:   socks5,
+		CacheDir: cacheDir,
 	}
 	collector = cfg.Create()
 }

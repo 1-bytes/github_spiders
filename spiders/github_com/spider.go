@@ -19,6 +19,7 @@ type Spider struct {
 	Users     types.GitHubUser
 	LimitRule colly.LimitRule
 	Socks5    string
+	CacheDir  string
 }
 
 // Create 用于初始化 colly 框架的对象.
@@ -29,6 +30,7 @@ func (s Spider) Create() *colly.Collector {
 		colly.UserAgent(s.UserAgent),
 		colly.Async(s.Async),
 		colly.DetectCharset(),
+		colly.CacheDir(s.CacheDir),
 	}
 
 	if s.Debug {

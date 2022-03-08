@@ -12,6 +12,7 @@ func init() {
 			"user_agent":  config.Env("GITHUB_SPIDER_USER_AGENT", ""),
 			"parallelism": config.Env("GITHUB_SPIDER_PARALLELISM", 1),
 			"socks5":      config.Env("GITHUB_SPIDER_SOCKS5", ""),
+			"cacheDir":    config.Env("GITHUB_SPIDER_CACHE_DIR", "./runtime/cache"),
 			"users":       config.Env("GITHUB_SPIDER_USERS", "aaa,bbb,ccc"),
 		},
 	})
