@@ -63,6 +63,7 @@ func (ru *ReposByUser) Callbacks() {
 		_ = resp.Request.Visit(url)
 	})
 
+	// 错误处理
 	collector.OnError(func(resp *colly.Response, err error) {
 		ru.lock.Lock()
 		validity, t := auth.CheckTokenValidity(resp)

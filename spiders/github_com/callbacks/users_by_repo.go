@@ -72,7 +72,6 @@ func (ur *UsersByRepo) Callbacks() {
 				"unblock time is: %s Trying to change Token", t)
 			auth.NextToken()
 			auth.DelToken(resp.Request.Headers)
-			auth.AddToken(resp.Request.Headers)
 			_ = resp.Request.Retry()
 		}
 		ur.lock.Unlock()
