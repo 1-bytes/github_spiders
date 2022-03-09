@@ -3,6 +3,8 @@ package types
 import "github.com/gocolly/colly"
 
 const DefaultPerPage = 30 // 默认每页数据条数
+const TagsRepo = "repo"
+const TagsUser = "user"
 
 type User struct {
 	Token string

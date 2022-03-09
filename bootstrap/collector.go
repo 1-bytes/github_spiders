@@ -2,13 +2,12 @@ package bootstrap
 
 import (
 	"github.com/gocolly/colly"
+	"github_spiders/pkg/collectors"
 	"github_spiders/pkg/config"
 	"github_spiders/spiders/github_com"
 )
 
-var collector *colly.Collector
-
-// SetupCollector 初始化爬虫收集器.
+// SetupCollector 初始化 Collector.
 func SetupCollector() {
 	var (
 		domain      = config.GetString("spiders.github.domain", "api.github.com")
@@ -18,7 +17,8 @@ func SetupCollector() {
 		cacheDir    = config.GetString("spiders.github.cache_dir", "./runtime/cache")
 	)
 
-	cfg := github_com.Spider{
+	// 这里只初始化配置 实例惰性加载
+	collectors.SetConfig(&github_com.Spider{
 		Debug:     config.GetBool("app.debug", true),
 		Async:     config.GetBool("app.async", true),
 		Domain:    domain,
@@ -29,14 +29,5 @@ func SetupCollector() {
 		},
 		Socks5:   socks5,
 		CacheDir: cacheDir,
-	}
-	collector = cfg.Create()
-}
-
-// GetCollector 获取 colly.Collector.
-func GetCollector() *colly.Collector {
-	if collector == nil {
-		SetupCollector()
-	}
-	return collector
+	})
 }

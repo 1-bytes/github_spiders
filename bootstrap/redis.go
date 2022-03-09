@@ -2,7 +2,9 @@ package bootstrap
 
 import (
 	"github.com/gocolly/redisstorage"
+	"github_spiders/pkg/collectors"
 	"github_spiders/pkg/config"
+	"github_spiders/spiders/types"
 )
 
 // SetupCollyRedis 初始化 Colly Redis.
@@ -13,7 +15,8 @@ func SetupCollyRedis() {
 		DB:       config.GetInt("redis.github.db"),
 		Prefix:   config.GetString("redis.github.prefix"),
 	}
-	err := GetCollector().SetStorage(storage)
+
+	err := collectors.GetInstance(types.TagsRepo).SetStorage(storage)
 	if err != nil {
 		panic(err)
 	}

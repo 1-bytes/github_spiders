@@ -2,6 +2,7 @@ package callbacks
 
 import (
 	"github.com/gocolly/colly"
+	"github_spiders/pkg/collectors"
 	"github_spiders/pkg/utils"
 	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
@@ -13,7 +14,6 @@ import (
 // GitHub API docs url:
 // https://docs.github.com/cn/rest/reference/activity#list-stargazers
 type UsersByRepo struct {
-	Colly types.GitHubCollector
 	index int
 }
 
@@ -21,8 +21,8 @@ type UsersByRepo struct {
 func (ur *UsersByRepo) Callbacks() {
 	ur.index = 0
 	auth := user.NewAuth()
-	collector := ur.Colly
-	collector.UsersByRepoC.OnRequest(func(r *colly.Request) {
+	collector := collectors.GetInstance(types.TagsUser)
+	collector.OnRequest(func(r *colly.Request) {
 		// GitHub's docs:
 		// By default, all requests to https://api.github.com receive the v3 version of the REST API.
 		// We encourage you to explicitly request this version via the Accept header.
@@ -30,7 +30,7 @@ func (ur *UsersByRepo) Callbacks() {
 		r.Headers = auth.AddToken(r.Headers, ur.index)
 	})
 
-	collector.UsersByRepoC.OnResponse(func(resp *colly.Response) {
+	collector.OnResponse(func(resp *colly.Response) {
 		users, err := utils.JsonUnmarshalBody(resp.Body)
 		if err != nil {
 			log.Printf("err: Failed to unmarshal the json: %s", err)
@@ -47,13 +47,13 @@ func (ur *UsersByRepo) Callbacks() {
 			starViewUrl := u["url"].(string) + "/starred"
 			log.Printf("【New User】 Name:%s, URL:%s",
 				userName, starViewUrl)
-			_ = collector.ReposByUserC.Visit(starViewUrl)
+			_ = collectors.GetInstance(types.TagsRepo).Visit(starViewUrl)
 		}
 
 		url := common.GetNextPageUrl(resp.Request, userLen)
 		if url == "" {
 			return
 		}
-		_ = collector.UsersByRepoC.Visit(url)
+		_ = collector.Visit(url)
 	})
 }

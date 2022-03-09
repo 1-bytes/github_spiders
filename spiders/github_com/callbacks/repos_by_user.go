@@ -1,7 +1,9 @@
 package callbacks
 
 import (
+	"fmt"
 	"github.com/gocolly/colly"
+	"github_spiders/pkg/collectors"
 	"github_spiders/pkg/utils"
 	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
@@ -13,7 +15,6 @@ import (
 // GitHub API docs url:
 // https://docs.github.com/cn/rest/reference/activity#list-repositories-starred-by-a-user
 type ReposByUser struct {
-	Colly types.GitHubCollector
 	Index int
 }
 
@@ -21,8 +22,8 @@ type ReposByUser struct {
 func (ru *ReposByUser) Callbacks() {
 	ru.Index = 0
 	auth := user.NewAuth()
-	collector := ru.Colly
-	collector.ReposByUserC.OnRequest(func(r *colly.Request) {
+	collector := collectors.GetInstance(types.TagsRepo)
+	collector.OnRequest(func(r *colly.Request) {
 		// GitHub's docs:
 		// By default, all requests to https://api.github.com receive the v3 version of the REST API.
 		// We encourage you to explicitly request this version via the Accept header.
@@ -30,7 +31,7 @@ func (ru *ReposByUser) Callbacks() {
 		r.Headers = auth.AddToken(r.Headers, ru.Index)
 	})
 
-	collector.ReposByUserC.OnResponse(func(resp *colly.Response) {
+	collector.OnResponse(func(resp *colly.Response) {
 		// if resp.StatusCode != http.StatusOK {
 		// TODO:// 回头再处理这个问题，状态码为非200状态时，有可能是需要更换帐号的 token 了 ..
 		// }
@@ -51,7 +52,7 @@ func (ru *ReposByUser) Callbacks() {
 			starCount := repo["stargazers_count"]
 			log.Printf("【New Repo】 Name:%s, StarCount:%v, URL:%s",
 				repoName, starCount, starViewUrl)
-			_ = collector.UsersByRepoC.Visit(starViewUrl.(string))
+			_ = collectors.GetInstance(types.TagsUser).Visit(starViewUrl.(string))
 		}
 
 		// 下一页
@@ -59,6 +60,10 @@ func (ru *ReposByUser) Callbacks() {
 		if url == "" {
 			return
 		}
-		_ = collector.ReposByUserC.Visit(url)
+		_ = collector.Visit(url)
+	})
+
+	collector.OnError(func(resp *colly.Response, err error) {
+		fmt.Println("errors:::", resp.StatusCode, resp.Body, err)
 	})
 }

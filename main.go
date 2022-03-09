@@ -2,6 +2,7 @@ package main
 
 import (
 	"github_spiders/bootstrap"
+	"github_spiders/pkg/collectors"
 	"github_spiders/spiders/types"
 )
 
@@ -11,16 +12,15 @@ func init() {
 
 // main 程序入口.
 func main() {
-	c := bootstrap.GetCollector()
-	c2 := c.Clone()
-	bootstrap.SetupCallback(types.GitHubCollector{
-		ReposByUserC: c,
-		UsersByRepoC: c2,
-	})
-	// err := c2.Visit("https://api.github.com/repos/1-bytes/GoBlog/stargazers?per_page=100&page=1")
-	err := c.Visit("https://api.github.com/users/1-bytes/starred?per_page=100&page=1")
+	reposByUserC := collectors.GetInstance(types.TagsRepo)
+	collectors.CloneToTag(types.TagsRepo, types.TagsUser)
+	usersByRepoC := collectors.GetInstance(types.TagsUser)
+
+	err := reposByUserC.Visit("https://api.github.com/users/1-bytes/starred?per_page=100&page=1")
+	// _ = usersByRepoC.Visit("https://api.github.com/repos/1-bytes/GoBlog/stargazers?per_page=100&page=1")
 	if err != nil {
 		panic(err)
 	}
-	c.Wait()
+	reposByUserC.Wait()
+	usersByRepoC.Wait()
 }
