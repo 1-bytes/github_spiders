@@ -15,12 +15,12 @@ import (
 // GitHub API docs url:
 // https://docs.github.com/cn/rest/reference/activity#list-repositories-starred-by-a-user
 type ReposByUser struct {
-	Index int
+	index int
 }
 
 // Callbacks 爬虫回调函数.
 func (ru *ReposByUser) Callbacks() {
-	ru.Index = 0
+	ru.index = 0
 	auth := user.NewAuth()
 	collector := collectors.GetInstance(types.TagsRepo)
 	collector.OnRequest(func(r *colly.Request) {
@@ -28,7 +28,7 @@ func (ru *ReposByUser) Callbacks() {
 		// By default, all requests to https://api.github.com receive the v3 version of the REST API.
 		// We encourage you to explicitly request this version via the Accept header.
 		r.Headers.Add("Accept", "application/vnd.github.v3+json")
-		r.Headers = auth.AddToken(r.Headers, ru.Index)
+		r.Headers = auth.AddToken(r.Headers, ru.index)
 	})
 
 	collector.OnResponse(func(resp *colly.Response) {
@@ -60,10 +60,10 @@ func (ru *ReposByUser) Callbacks() {
 		if url == "" {
 			return
 		}
-		_ = collector.Visit(url)
+		_ = resp.Request.Visit(url)
 	})
 
 	collector.OnError(func(resp *colly.Response, err error) {
-		fmt.Println("errors:::", resp.StatusCode, resp.Body, err)
+		fmt.Println("rbu_errors:::", resp.StatusCode, resp.Body, err)
 	})
 }

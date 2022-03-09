@@ -7,8 +7,8 @@ func Setup() {
 	autoLoader(
 		configs.Initialize, // 配置文件
 		SetupCollector,     // 初始化 Colly
-		SetupCollyRedis,    // 初始化 Colly.Redis
-		SetupCallback,      // 初始化 Callback
+		// SetupCollyRedis,    // 初始化 Colly.Redis
+
 	)
 }
 

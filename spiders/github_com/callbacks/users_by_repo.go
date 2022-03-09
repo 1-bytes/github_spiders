@@ -54,6 +54,10 @@ func (ur *UsersByRepo) Callbacks() {
 		if url == "" {
 			return
 		}
-		_ = collector.Visit(url)
+		_ = resp.Request.Visit(url)
+	})
+
+	collector.OnError(func(resp *colly.Response, err error) {
+		log.Println("ubr_errors:::", resp.StatusCode, resp.Body, err)
 	})
 }
