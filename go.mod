@@ -3,7 +3,7 @@ module github_spiders
 go 1.17
 
 require (
-	github.com/gocolly/colly v1.2.1-0.20191128122054-e910bad05231
+	github.com/gocolly/colly/v2 v2.1.1-0.20220308184002-b151a08fbde2
 	github.com/gocolly/redisstorage v0.0.0-20190812112800-1745c5e6d0ba
 	github.com/spf13/cast v1.4.1
 	github.com/spf13/viper v1.10.1
@@ -24,6 +24,9 @@ require (
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
+	github.com/nlnwa/whatwg-url v0.1.0 // indirect
+	github.com/onsi/ginkgo v1.16.5 // indirect
+	github.com/onsi/gomega v1.18.1 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
 	github.com/spf13/afero v1.8.1 // indirect
@@ -31,8 +34,9 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
+	github.com/willf/bitset v1.1.11 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
+	golang.org/x/sys v0.0.0-20220307203707-22a9840ba4d7 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect

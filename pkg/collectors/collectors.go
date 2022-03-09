@@ -1,7 +1,7 @@
 package collectors
 
 import (
-	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/v2"
 	"github_spiders/spiders/github_com"
 	"sync"
 )

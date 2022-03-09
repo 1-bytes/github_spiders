@@ -1,7 +1,7 @@
 package callbacks
 
 import (
-	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/v2"
 	"github_spiders/pkg/collectors"
 	"github_spiders/pkg/utils"
 	"github_spiders/spiders/github_com/common"

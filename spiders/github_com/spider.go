@@ -1,9 +1,9 @@
 package github_com
 
 import (
-	"github.com/gocolly/colly"
-	"github.com/gocolly/colly/debug"
-	"github.com/gocolly/colly/proxy"
+	"github.com/gocolly/colly/v2"
+	"github.com/gocolly/colly/v2/debug"
+	"github.com/gocolly/colly/v2/proxy"
 	"github_spiders/pkg/config"
 	"github_spiders/spiders/types"
 	"log"

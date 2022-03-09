@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/v2"
 	"github_spiders/spiders/types"
 	"strconv"
 	"sync/atomic"

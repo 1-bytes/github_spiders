@@ -1,6 +1,6 @@
 package types
 
-import "github.com/gocolly/colly"
+import "github.com/gocolly/colly/v2"
 
 const DefaultPerPage = 30 // 默认每页数据条数
 const TagsRepo = "repo"
