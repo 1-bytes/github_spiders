@@ -12,15 +12,16 @@ func init() {
 
 // main 程序入口.
 func main() {
-	user := collectors.GetInstance(types.TagsUser)
-	collectors.CloneToTag(types.TagsUser, types.TagsRepo)
 	repo := collectors.GetInstance(types.TagsRepo)
+	collectors.CloneToTag(types.TagsRepo, types.TagsUser)
+	user := collectors.GetInstance(types.TagsUser)
 	bootstrap.SetupCallback()
 
-	err := user.Visit("https://api.github.com/repos/1-bytes/GoBlog/stargazers")
+	// err := c.Visit("https://api.github.com/repos/1-bytes/GoBlog/stargazers?per_page=100&page=1")
+	err := repo.Visit("https://api.github.com/users/1-bytes/starred")
 	if err != nil {
 		panic(err)
 	}
-	user.Wait()
 	repo.Wait()
+	user.Wait()
 }

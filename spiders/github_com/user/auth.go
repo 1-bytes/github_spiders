@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -14,14 +15,17 @@ type auth struct {
 	users types.GitHubUser
 }
 
-var AuthInstance *auth
+var (
+	AuthInstance *auth
+	once         sync.Once
+)
 
 // NewAuth 创建一个新的 Auth 对象.
 func NewAuth() *auth {
-	if AuthInstance == nil { // 单例模式
+	once.Do(func() {
 		AuthInstance = &auth{}
 		AuthInstance.initAuth()
-	}
+	})
 	return AuthInstance
 }
 
@@ -44,7 +48,7 @@ func (a *auth) loadGitHubUsers() types.GitHubUser {
 
 // AddToken 在 header 里面增加授权 token.
 func (a *auth) AddToken(header *http.Header, userIndex int) *http.Header {
-	maxLen := len(a.users.Users)
+	maxLen := a.GetTokenCount()
 	if maxLen == 0 || userIndex > maxLen {
 		return header
 	}
@@ -54,4 +58,9 @@ func (a *auth) AddToken(header *http.Header, userIndex int) *http.Header {
 	}
 	header.Add("Authorization", "token "+a.users.Users[userIndex].Token)
 	return header
+}
+
+// GetTokenCount 获取账号的数量.
+func (a *auth) GetTokenCount() int {
+	return len(a.users.Users)
 }
