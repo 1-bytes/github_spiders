@@ -8,26 +8,19 @@ import (
 	"github_spiders/spiders/github_com/user"
 	"github_spiders/spiders/types"
 	"log"
-	"net/http"
-	"strconv"
 	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // UsersByRepo 列出已为存储库加注星标的人员.
 // GitHub API docs url:
 // https://docs.github.com/cn/rest/reference/activity#list-stargazers
 type UsersByRepo struct {
-	tokenIndex    uint32
-	tokenMaxCount int
-	lock          sync.Mutex
+	lock sync.Mutex
 }
 
 // Callbacks 爬虫回调函数.
 func (ur *UsersByRepo) Callbacks() {
 	// 初始化变量
-	ur.tokenIndex = 0
 	auth := user.NewAuth()
 	collector := collectors.GetInstance(types.TagsUser)
 
@@ -37,7 +30,7 @@ func (ur *UsersByRepo) Callbacks() {
 		// By default, all requests to https://api.github.com receive the v3 version of the REST API.
 		// We encourage you to explicitly request this version via the Accept header.
 		r.Headers.Add("Accept", "application/vnd.github.v3+json")
-		r.Headers = auth.AddToken(r.Headers, int(ur.tokenIndex))
+		r.Headers = auth.AddToken(r.Headers)
 	})
 
 	//  返回数据处理
@@ -70,23 +63,16 @@ func (ur *UsersByRepo) Callbacks() {
 		_ = resp.Request.Visit(url)
 	})
 
-	//  错误处理
+	// 错误处理
 	collector.OnError(func(resp *colly.Response, err error) {
-		rateLimit := resp.Headers.Get("X-RateLimit-Remaining")
-		rateLimitRetimeStr := resp.Headers.Get("X-RateLimit-Reset")
-		rateLimitRetime, _ := strconv.ParseInt(rateLimitRetimeStr, 10, 64)
-		tm := time.Unix(rateLimitRetime, 0)
-		recoveryTime := tm.Format("2006-01-02 15:04:05")
 		ur.lock.Lock()
-		if resp.StatusCode != http.StatusOK && rateLimit == "0" {
-			log.Printf(
-				"Toktn or IP is temporarily blocked, unblock time is: %s Trying to change Token",
-				recoveryTime,
-			)
-			atomic.AddUint32(&ur.tokenIndex, 1)
-			if int(ur.tokenIndex) == ur.tokenMaxCount {
-				ur.tokenIndex = 0
-			}
+		validity, t := auth.CheckTokenValidity(resp)
+		if !validity {
+			log.Printf("Toktn or IP is temporarily blocked, "+
+				"unblock time is: %s Trying to change Token", t)
+			auth.NextToken()
+			auth.DelToken(resp.Request.Headers)
+			auth.AddToken(resp.Request.Headers)
 			_ = resp.Request.Retry()
 		}
 		ur.lock.Unlock()

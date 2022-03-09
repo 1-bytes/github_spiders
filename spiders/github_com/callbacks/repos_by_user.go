@@ -8,28 +8,20 @@ import (
 	"github_spiders/spiders/github_com/user"
 	"github_spiders/spiders/types"
 	"log"
-	"net/http"
-	"strconv"
 	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // ReposByUser 列出用户已加星标的存储库.
 // GitHub API docs url:
 // https://docs.github.com/cn/rest/reference/activity#list-repositories-starred-by-a-user
 type ReposByUser struct {
-	tokenIndex    uint32
-	tokenMaxCount int
-	lock          sync.Mutex
+	lock sync.Mutex
 }
 
 // Callbacks 爬虫回调函数.
 func (ru *ReposByUser) Callbacks() {
 	// 初始化变量
-	ru.tokenIndex = 0
 	auth := user.NewAuth()
-	ru.tokenMaxCount = auth.GetTokenCount()
 	collector := collectors.GetInstance(types.TagsRepo)
 
 	// 对要提交的请求进行处理
@@ -38,7 +30,7 @@ func (ru *ReposByUser) Callbacks() {
 		// By default, all requests to https://api.github.com receive the v3 version of the REST API.
 		// We encourage you to explicitly request this version via the Accept header.
 		r.Headers.Add("Accept", "application/vnd.github.v3+json")
-		r.Headers = auth.AddToken(r.Headers, int(ru.tokenIndex))
+		r.Headers = auth.AddToken(r.Headers)
 	})
 
 	//  返回数据处理
@@ -71,23 +63,15 @@ func (ru *ReposByUser) Callbacks() {
 		_ = resp.Request.Visit(url)
 	})
 
-	//  错误处理
 	collector.OnError(func(resp *colly.Response, err error) {
-		rateLimit := resp.Headers.Get("X-RateLimit-Remaining")
-		rateLimitRetimeStr := resp.Headers.Get("X-RateLimit-Reset")
-		rateLimitRetime, _ := strconv.ParseInt(rateLimitRetimeStr, 10, 64)
-		tm := time.Unix(rateLimitRetime, 0)
-		recoveryTime := tm.Format("2006-01-02 15:04:05")
 		ru.lock.Lock()
-		if resp.StatusCode != http.StatusOK && rateLimit == "0" {
-			log.Printf(
-				"Toktn or IP is temporarily blocked, unblock time is: %s Trying to change Token",
-				recoveryTime,
-			)
-			atomic.AddUint32(&ru.tokenIndex, 1) // 注意这里协程安全，不能直接 ru.tokenIndex++
-			if int(ru.tokenIndex) == ru.tokenMaxCount {
-				ru.tokenIndex = 0
-			}
+		validity, t := auth.CheckTokenValidity(resp)
+		if !validity {
+			log.Printf("Toktn or IP is temporarily blocked, "+
+				"unblock time is: %s Trying to change Token", t)
+			auth.NextToken()
+			auth.DelToken(resp.Request.Headers)
+			auth.AddToken(resp.Request.Headers)
 			_ = resp.Request.Retry()
 		}
 		ru.lock.Unlock()
