@@ -20,7 +20,7 @@ func SetupCollector() {
 	// 这里只初始化配置 实例惰性加载
 	collectors.SetConfig(&github_com.Spider{
 		Debug:     config.GetBool("app.debug", true),
-		Async:     config.GetBool("app.async", true),
+		Async:     config.GetBool("spiders.github.async", true),
 		Domain:    domain,
 		UserAgent: userAgent,
 		LimitRule: colly.LimitRule{
