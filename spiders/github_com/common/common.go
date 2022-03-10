@@ -3,9 +3,24 @@ package common
 import (
 	"github.com/gocolly/colly/v2"
 	"github_spiders/spiders/types"
+	"net/url"
 	"strconv"
 	"sync/atomic"
 )
+
+func CheckUrl(u string) string {
+	parse, _ := url.Parse(u)
+	params, _ := url.ParseQuery(parse.RawQuery)
+	if params.Has("per_page") {
+		params.Del("per_page")
+	}
+	params.Add("per_page", strconv.Itoa(types.MaxPerPage))
+	if !params.Has("page") {
+		params.Add("page", "1")
+	}
+	parse.RawQuery = params.Encode()
+	return parse.String()
+}
 
 // GetNextPageUrl 获取下一页要请求的链接.
 func GetNextPageUrl(r *colly.Request, dataLen int) string {
@@ -25,5 +40,5 @@ func GetNextPageUrl(r *colly.Request, dataLen int) string {
 	atomic.AddInt64(&page, 1)
 	params.Set("page", strconv.FormatInt(page, 10))
 	r.URL.RawQuery = params.Encode()
-	return r.URL.String()
+	return CheckUrl(r.URL.String())
 }
