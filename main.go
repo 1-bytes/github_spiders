@@ -14,14 +14,14 @@ func init() {
 func main() {
 	repo := collectors.GetInstance(types.TagsRepo)
 	collectors.CloneToTag(types.TagsRepo, types.TagsUser)
-	user := collectors.GetInstance(types.TagsUser)
+	// user := collectors.GetInstance(types.TagsUser)
 	bootstrap.SetupCallback()
 
-	// err := c.Visit("https://api.github.com/repos/1-bytes/GoBlog/stargazers?per_page=100&page=1")
+	// err := user.Visit("https://api.github.com/repos/go101/go101/stargazers?per_page=100&page=1")
 	err := repo.Visit("https://api.github.com/users/1-bytes/starred")
 	if err != nil {
 		panic(err)
 	}
 	repo.Wait()
-	user.Wait()
+	// user.Wait()
 }
