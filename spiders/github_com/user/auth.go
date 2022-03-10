@@ -54,6 +54,8 @@ func (a *auth) loadGitHubUsers() types.GitHubUser {
 
 // AddToken 在 header 里面增加授权 token.
 func (a *auth) AddToken(header *http.Header) *http.Header {
+	a.lock.Lock()
+	defer a.lock.Unlock()
 	maxLen := a.GetTokenCount()
 	if maxLen == 0 || int(a.Index) > maxLen {
 		return header
