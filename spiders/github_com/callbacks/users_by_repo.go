@@ -47,11 +47,13 @@ func (ur *UsersByRepo) Callbacks() {
 			return
 		}
 
+		var userName, starViewUrl string
 		for _, u := range users {
-			userName := u["login"]
-			starViewUrl := u["url"].(string) + "/starred"
-			log.Printf("【New User】 Name:%s, URL:%s",
-				userName, starViewUrl)
+			// 有关用户的一些信息，想要什么值可以自己取
+			userName = u["login"].(string)
+			starViewUrl = u["url"].(string) + "/starred"
+			log.Printf("【New User】 Name:%s, URL:%s", userName, starViewUrl)
+			starViewUrl = common.CheckUrl(starViewUrl)
 			_ = collectors.GetInstance(types.TagsRepo).Visit(starViewUrl)
 		}
 

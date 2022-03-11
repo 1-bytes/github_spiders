@@ -40,5 +40,5 @@ func GetNextPageUrl(r *colly.Request, dataLen int) string {
 	atomic.AddInt64(&page, 1)
 	params.Set("page", strconv.FormatInt(page, 10))
 	r.URL.RawQuery = params.Encode()
-	return CheckUrl(r.URL.String())
+	return r.URL.String()
 }

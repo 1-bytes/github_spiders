@@ -46,13 +46,15 @@ func (ru *ReposByUser) Callbacks() {
 			return
 		}
 
+		var repoName, starViewUrl string
 		for _, repo := range repos {
-			repoName := repo["full_name"]
-			starViewUrl := repo["stargazers_url"]
-			starCount := repo["stargazers_count"]
-			log.Printf("【New Repo】 Name:%s, StarCount:%v, URL:%s",
-				repoName, starCount, starViewUrl)
-			_ = collectors.GetInstance(types.TagsUser).Visit(starViewUrl.(string))
+			// 有关仓库的一些信息，想要什么值可以自己取
+			repoName = repo["full_name"].(string)
+			starViewUrl = repo["stargazers_url"].(string)
+			// starCount = repo["stargazers_count"].(float64)
+			log.Printf("【New Repo】 Name:%s, StarCount:%v, URL:%s", repoName, starViewUrl)
+			starViewUrl = common.CheckUrl(starViewUrl)
+			_ = collectors.GetInstance(types.TagsUser).Visit(starViewUrl)
 		}
 
 		// 下一页
