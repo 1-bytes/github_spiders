@@ -1,13 +1,21 @@
 package callbacks
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/gocolly/colly/v2"
+	"github.com/olivere/elastic/v7"
+	"github_spiders/config"
 	"github_spiders/pkg/collectors"
+	"github_spiders/pkg/encoding/base64"
 	"github_spiders/pkg/utils"
 	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
 	"github_spiders/spiders/types"
 	"log"
+	"net/http"
+	"strconv"
 	"sync"
 )
 
@@ -23,6 +31,10 @@ func (ru *ReposByUser) Callbacks() {
 	// 初始化变量
 	auth := user.NewAuth()
 	collector := collectors.GetInstance(types.TagsRepo)
+	elasticClient, err := elastic.NewClient(config.ElasticOptions...)
+	if err != nil {
+		panic(err)
+	}
 
 	// 对要提交的请求进行处理
 	collector.OnRequest(func(r *colly.Request) {
@@ -46,15 +58,44 @@ func (ru *ReposByUser) Callbacks() {
 			return
 		}
 
-		var repoName, starViewUrl string
+		var (
+			repoID        string
+			repoName      string
+			repoURL       string
+			repoApiURL    string
+			repoStarURL   string
+			repoStarCount uint64
+		)
 		for _, repo := range repos {
 			// 有关仓库的一些信息，想要什么值可以自己取
+			repoID = strconv.FormatUint(uint64(repo["id"].(float64)), 10)
 			repoName = repo["full_name"].(string)
-			starViewUrl = repo["stargazers_url"].(string)
-			// starCount = repo["stargazers_count"].(float64)
-			log.Printf("【New Repo】 Name:%s, StarCount:%v, URL:%s", repoName, starViewUrl)
-			starViewUrl = common.CheckUrl(starViewUrl)
-			_ = collectors.GetInstance(types.TagsUser).Visit(starViewUrl)
+			repoURL = repo["html_url"].(string)
+			repoApiURL = repo["url"].(string)
+			repoStarURL = repo["stargazers_url"].(string)
+			repoStarCount = uint64(repo["stargazers_count"].(float64))
+			log.Printf("【New Repo】 Name:%s, URL:%s", repoName, repoStarURL)
+
+			// 获取 Readme.md 的数据并存储
+			readme, url, _ := GetReadme(repoName)
+			err = SaveData(elasticClient, types.ElasticIndexConfig{
+				Index: "github_readme",
+				Item: types.Item{
+					RepoID:        repoID,
+					RepoName:      repoName,
+					RepoURL:       repoURL,
+					RepoApiURL:    repoApiURL,
+					RepoStarCount: repoStarCount,
+					ReadmeURL:     url,
+					Readme:        readme,
+				},
+			})
+			if err != nil {
+				log.Printf("Failed to store data in Elasticsearch, error: %s", err)
+			}
+
+			repoStarURL = common.CheckUrl(repoStarURL)
+			_ = collectors.GetInstance(types.TagsUser).Visit(repoStarURL)
 		}
 
 		// 下一页
@@ -78,4 +119,45 @@ func (ru *ReposByUser) Callbacks() {
 		}
 		ru.lock.Unlock()
 	})
+}
+
+// SaveData 保存数据.
+func SaveData(client *elastic.Client, cfg types.ElasticIndexConfig) error {
+	data, err := json.Marshal(cfg.Item)
+	if err != nil {
+		return err
+	}
+	_, err = client.Index().
+		Index(cfg.Index).
+		BodyJson(string(data)).
+		Id(cfg.Item.RepoID).Do(context.Background())
+	return err
+}
+
+// GetReadme 获取 Readme.md 文件的内容.
+func GetReadme(fullName string) (string, string, error) {
+	header := &http.Header{}
+	auth := user.NewAuth()
+	header.Add("Accept", "application/vnd.github.v3+json")
+	header = auth.AddToken(header)
+
+	url := fmt.Sprintf("https://api.github.com/repos/%s/readme", fullName)
+	fetch, err := common.Fetcher(url, header)
+	if err != nil {
+		return "", "", err
+	}
+	body, err := utils.JsonUnmarshalBody(fetch)
+	if err != nil {
+		return "", "", err
+	}
+
+	var readme string
+	if len(body) != 0 {
+		var ok bool
+		if _, ok = body[0]["content"].(string); ok {
+			readme = body[0]["content"].(string)
+			url = body[0]["url"].(string)
+		}
+	}
+	return string(base64.Decoding(readme)), url, nil
 }

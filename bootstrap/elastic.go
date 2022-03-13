@@ -4,6 +4,7 @@ import (
 	"github.com/olivere/elastic/v7"
 	configs "github_spiders/config"
 	"github_spiders/pkg/config"
+	"time"
 )
 
 // SetupElastic 初始化 Elastic.
@@ -15,5 +16,6 @@ func SetupElastic() {
 			config.GetString("elastic.github.password"),
 		),
 		elastic.SetSniff(false),
+		elastic.SetHealthcheckInterval(5 * time.Second),
 	}
 }

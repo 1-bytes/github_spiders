@@ -1,8 +1,12 @@
 package common
 
 import (
+	"fmt"
 	"github.com/gocolly/colly/v2"
 	"github_spiders/spiders/types"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"strconv"
 	"sync/atomic"
@@ -41,4 +45,24 @@ func GetNextPageUrl(r *colly.Request, dataLen int) string {
 	params.Set("page", strconv.FormatInt(page, 10))
 	r.URL.RawQuery = params.Encode()
 	return r.URL.String()
+}
+
+// Fetcher 获取指定网页内容.
+func Fetcher(url string, headers *http.Header) ([]byte, error) {
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req.Header = *headers
+	resp, err := (&http.Client{}).Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(
+			"the returned status code is not the expected status: %d",
+			resp.StatusCode,
+		)
+	}
+	return ioutil.ReadAll(resp.Body)
 }

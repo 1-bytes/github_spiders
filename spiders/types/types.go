@@ -19,3 +19,18 @@ type GitHubCollector struct {
 	ReposByUserC *colly.Collector
 	UsersByRepoC *colly.Collector
 }
+
+type ElasticIndexConfig struct {
+	Index string
+	Item  Item
+}
+
+type Item struct {
+	RepoID        string
+	RepoName      string
+	RepoURL       string
+	RepoApiURL    string
+	ReadmeURL     string
+	RepoStarCount uint64
+	Readme        string
+}
