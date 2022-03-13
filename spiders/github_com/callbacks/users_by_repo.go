@@ -4,18 +4,17 @@ import (
 	"github.com/gocolly/colly/v2"
 	"github_spiders/pkg/collectors"
 	"github_spiders/pkg/utils"
+	"github_spiders/spiders/github_com"
 	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
 	"github_spiders/spiders/types"
 	"log"
-	"sync"
 )
 
 // UsersByRepo 列出已为存储库加注星标的人员.
 // GitHub API docs url:
 // https://docs.github.com/cn/rest/reference/activity#list-stargazers
 type UsersByRepo struct {
-	lock sync.Mutex
 }
 
 // Callbacks 爬虫回调函数.
@@ -67,7 +66,8 @@ func (ur *UsersByRepo) Callbacks() {
 
 	// 错误处理
 	collector.OnError(func(resp *colly.Response, err error) {
-		ur.lock.Lock()
+		github_com.ErrLock.Lock()
+		defer github_com.ErrLock.Unlock()
 		validity, t := auth.CheckTokenValidity(resp)
 		if !validity {
 			log.Printf("Toktn or IP is temporarily blocked, "+
@@ -76,6 +76,5 @@ func (ur *UsersByRepo) Callbacks() {
 			auth.DelToken(resp.Request.Headers)
 			_ = resp.Request.Retry()
 		}
-		ur.lock.Unlock()
 	})
 }

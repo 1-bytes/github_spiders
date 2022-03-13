@@ -10,20 +10,19 @@ import (
 	"github_spiders/pkg/collectors"
 	"github_spiders/pkg/encoding/base64"
 	"github_spiders/pkg/utils"
+	"github_spiders/spiders/github_com"
 	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
 	"github_spiders/spiders/types"
 	"log"
 	"net/http"
 	"strconv"
-	"sync"
 )
 
 // ReposByUser 列出用户已加星标的存储库.
 // GitHub API docs url:
 // https://docs.github.com/cn/rest/reference/activity#list-repositories-starred-by-a-user
 type ReposByUser struct {
-	lock sync.Mutex
 }
 
 // Callbacks 爬虫回调函数.
@@ -108,7 +107,8 @@ func (ru *ReposByUser) Callbacks() {
 
 	// 错误处理
 	collector.OnError(func(resp *colly.Response, err error) {
-		ru.lock.Lock()
+		github_com.ErrLock.Lock()
+		defer github_com.ErrLock.Unlock()
 		validity, t := auth.CheckTokenValidity(resp)
 		if !validity {
 			log.Printf("Toktn or IP is temporarily blocked, "+
@@ -117,7 +117,6 @@ func (ru *ReposByUser) Callbacks() {
 			auth.DelToken(resp.Request.Headers)
 			_ = resp.Request.Retry()
 		}
-		ru.lock.Unlock()
 	})
 }
 

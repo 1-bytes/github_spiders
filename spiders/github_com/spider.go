@@ -8,6 +8,11 @@ import (
 	"github_spiders/spiders/types"
 	"log"
 	"os"
+	"sync"
+)
+
+var (
+	ErrLock sync.Mutex
 )
 
 // Spider github 爬虫.
