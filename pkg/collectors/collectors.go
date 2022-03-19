@@ -2,6 +2,7 @@ package collectors
 
 import (
 	"github.com/gocolly/colly/v2"
+	"github_spiders/pkg/storage"
 	"github_spiders/spiders/github_com"
 	"sync"
 )
@@ -37,6 +38,8 @@ func GetInstance(tag string) *colly.Collector {
 		defer lock.Unlock()
 		if collectorInstance[tag] == nil {
 			collectorInstance[tag] = cfg.Create()
+			redisStorage := storage.GetRedisStorage(tag)
+			_ = collectorInstance[tag].SetStorage(&redisStorage)
 		}
 		return collectorInstance[tag]
 	}(tag)

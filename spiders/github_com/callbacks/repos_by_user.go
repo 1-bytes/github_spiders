@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"github.com/gocolly/colly/v2"
 	"github.com/olivere/elastic/v7"
-	"github_spiders/config"
 	"github_spiders/pkg/collectors"
 	"github_spiders/pkg/encoding/base64"
+	"github_spiders/pkg/queued"
 	"github_spiders/pkg/utils"
 	"github_spiders/spiders/github_com"
 	"github_spiders/spiders/github_com/common"
@@ -16,8 +16,9 @@ import (
 	"github_spiders/spiders/types"
 	"log"
 	"net/http"
-	"strconv"
 )
+
+const TagUser = "user"
 
 // ReposByUser 列出用户已加星标的存储库.
 // GitHub API docs url:
@@ -29,11 +30,11 @@ type ReposByUser struct {
 func (ru *ReposByUser) Callbacks() {
 	// 初始化变量
 	auth := user.NewAuth()
-	collector := collectors.GetInstance(types.TagsRepo)
-	elasticClient, err := elastic.NewClient(config.ElasticOptions...)
-	if err != nil {
-		panic(err)
-	}
+	collector := collectors.GetInstance(TagRepo)
+	// elasticClient, err := elastic.NewClient(config.ElasticOptions...)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	// 对要提交的请求进行处理
 	collector.OnRequest(func(r *colly.Request) {
@@ -58,43 +59,44 @@ func (ru *ReposByUser) Callbacks() {
 		}
 
 		var (
-			repoID        string
-			repoName      string
-			repoURL       string
-			repoApiURL    string
-			repoStarURL   string
-			repoStarCount uint64
+			// repoID        string
+			repoName string
+			// repoURL       string
+			// repoApiURL    string
+			repoStarURL string
+			// repoStarCount uint64
 		)
 		for _, repo := range repos {
 			// 有关仓库的一些信息，想要什么值可以自己取
-			repoID = strconv.FormatUint(uint64(repo["id"].(float64)), 10)
+			// repoID = strconv.FormatUint(uint64(repo["id"].(float64)), 10)
 			repoName = repo["full_name"].(string)
-			repoURL = repo["html_url"].(string)
-			repoApiURL = repo["url"].(string)
+			// repoURL = repo["html_url"].(string)
+			// repoApiURL = repo["url"].(string)
 			repoStarURL = repo["stargazers_url"].(string)
-			repoStarCount = uint64(repo["stargazers_count"].(float64))
+			// repoStarCount = uint64(repo["stargazers_count"].(float64))
 			log.Printf("【New Repo】 Name:%s, URL:%s", repoName, repoStarURL)
 
-			// 获取 Readme.md 的数据并存储
-			readme, url, _ := GetReadme(repoName)
-			err = SaveData(elasticClient, types.ElasticIndexConfig{
-				Index: "github_readme",
-				Item: types.Item{
-					RepoID:        repoID,
-					RepoName:      repoName,
-					RepoURL:       repoURL,
-					RepoApiURL:    repoApiURL,
-					RepoStarCount: repoStarCount,
-					ReadmeURL:     url,
-					Readme:        readme,
-				},
-			})
-			if err != nil {
-				log.Printf("Failed to store data in Elasticsearch, error: %s", err)
-			}
+			// // 获取 Readme.md 的数据并存储
+			// readme, url, _ := GetReadme(repoName)
+			// err = SaveData(elasticClient, types.ElasticIndexConfig{
+			// 	Index: "github_readme",
+			// 	Item: types.Item{
+			// 		RepoID:        repoID,
+			// 		RepoName:      repoName,
+			// 		RepoURL:       repoURL,
+			// 		RepoApiURL:    repoApiURL,
+			// 		RepoStarCount: repoStarCount,
+			// 		ReadmeURL:     url,
+			// 		Readme:        readme,
+			// 	},
+			// })
+			// if err != nil {
+			// 	log.Printf("Failed to store data in Elasticsearch, error: %s", err)
+			// }
 
 			repoStarURL = common.CheckUrl(repoStarURL)
-			_ = collectors.GetInstance(types.TagsUser).Visit(repoStarURL)
+			// _ = collectors.GetInstance(TagUser).Visit(repoStarURL)
+			_ = queued.GetInstance(TagUser).AddURL(repoStarURL)
 		}
 
 		// 下一页
@@ -102,7 +104,8 @@ func (ru *ReposByUser) Callbacks() {
 		if url == "" {
 			return
 		}
-		_ = resp.Request.Visit(url)
+		// _ = resp.Request.Visit(url)
+		_ = queued.GetInstance(TagRepo).AddURL(url)
 	})
 
 	// 错误处理
@@ -122,6 +125,7 @@ func (ru *ReposByUser) Callbacks() {
 
 // SaveData 保存数据.
 func SaveData(client *elastic.Client, cfg types.ElasticIndexConfig) error {
+	return nil
 	data, err := json.Marshal(cfg.Item)
 	if err != nil {
 		return err

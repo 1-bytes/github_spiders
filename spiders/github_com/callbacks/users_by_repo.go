@@ -3,13 +3,15 @@ package callbacks
 import (
 	"github.com/gocolly/colly/v2"
 	"github_spiders/pkg/collectors"
+	"github_spiders/pkg/queued"
 	"github_spiders/pkg/utils"
 	"github_spiders/spiders/github_com"
 	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
-	"github_spiders/spiders/types"
 	"log"
 )
+
+const TagRepo = "repo"
 
 // UsersByRepo 列出已为存储库加注星标的人员.
 // GitHub API docs url:
@@ -21,7 +23,7 @@ type UsersByRepo struct {
 func (ur *UsersByRepo) Callbacks() {
 	// 初始化变量
 	auth := user.NewAuth()
-	collector := collectors.GetInstance(types.TagsUser)
+	collector := collectors.GetInstance(TagUser)
 
 	// 对要提交的请求进行处理
 	collector.OnRequest(func(r *colly.Request) {
@@ -53,7 +55,8 @@ func (ur *UsersByRepo) Callbacks() {
 			starViewUrl = u["url"].(string) + "/starred"
 			log.Printf("【New User】 Name:%s, URL:%s", userName, starViewUrl)
 			starViewUrl = common.CheckUrl(starViewUrl)
-			_ = collectors.GetInstance(types.TagsRepo).Visit(starViewUrl)
+			// _ = queued.GetInstance(TagRepo).Visit(starViewUrl)
+			_ = queued.GetInstance(TagRepo).AddURL(starViewUrl)
 		}
 
 		// 下一页
@@ -61,7 +64,8 @@ func (ur *UsersByRepo) Callbacks() {
 		if url == "" {
 			return
 		}
-		_ = resp.Request.Visit(url)
+		// _ = resp.Request.Visit(url)
+		_ = queued.GetInstance(TagUser).AddURL(starViewUrl)
 	})
 
 	// 错误处理

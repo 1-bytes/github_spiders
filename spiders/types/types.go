@@ -1,11 +1,11 @@
 package types
 
-import "github.com/gocolly/colly/v2"
+import (
+	"github.com/gocolly/colly/v2"
+)
 
 const DefaultPage = 30 // 默认每页数据条数
 const MaxPerPage = 100 // 每页数据最大条数
-const TagsRepo = "repo"
-const TagsUser = "user"
 
 type User struct {
 	Token string

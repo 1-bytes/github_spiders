@@ -7,8 +7,7 @@ func Setup() {
 	autoLoader(
 		configs.Initialize, // 配置文件
 		SetupCollector,     // 初始化 Colly
-		// SetupCollyRedis,    // 初始化 Colly.Redis
-		SetupElastic,
+		// SetupElastic,
 	)
 }
 

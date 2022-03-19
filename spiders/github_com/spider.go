@@ -35,7 +35,7 @@ func (s Spider) Create() *colly.Collector {
 		colly.UserAgent(s.UserAgent),
 		colly.Async(s.Async),
 		colly.DetectCharset(),
-		// colly.CacheDir(s.CacheDir),
+		colly.CacheDir(s.CacheDir),
 	}
 
 	if s.Debug {
