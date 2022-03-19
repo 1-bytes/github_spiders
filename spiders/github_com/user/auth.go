@@ -99,6 +99,10 @@ func (a *auth) NextToken() {
 // 返回的第一个参数如果是 true 则代表 token 有效，反之无效.
 // 返回的第二个参数是一个字符型格式化的时间，会显示 token 的解封日期，当 token 没有被封禁时，该值为空
 func (a *auth) CheckTokenValidity(resp *colly.Response) (bool, string) {
+	if resp.Headers == nil {
+		return true, ""
+	}
+
 	rateLimit := resp.Headers.Get("X-RateLimit-Remaining")
 	rateLimitRetimeStr := resp.Headers.Get("X-RateLimit-Reset")
 	if resp.StatusCode != http.StatusOK && rateLimit == "0" {

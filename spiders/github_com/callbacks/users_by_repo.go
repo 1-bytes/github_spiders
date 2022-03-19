@@ -70,11 +70,16 @@ func (ur *UsersByRepo) Callbacks() {
 		defer github_com.ErrLock.Unlock()
 		validity, t := auth.CheckTokenValidity(resp)
 		if !validity {
-			log.Printf("Toktn or IP is temporarily blocked, "+
+			log.Printf("Token or IP is temporarily blocked, "+
 				"unblock time is: %s Trying to change Token", t)
 			auth.NextToken()
 			auth.DelToken(resp.Request.Headers)
 			_ = resp.Request.Retry()
+			return
 		}
+		log.Println("Failed to initiate request, " +
+			"task has been sent back to queue, waiting for retry.")
+		_ = resp.Request.Retry()
+		return
 	})
 }
