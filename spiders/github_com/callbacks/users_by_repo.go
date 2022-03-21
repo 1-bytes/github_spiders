@@ -1,13 +1,14 @@
 package callbacks
 
 import (
+	"encoding/json"
 	"github.com/gocolly/colly/v2"
 	"github_spiders/pkg/collectors"
 	"github_spiders/pkg/queued"
-	"github_spiders/pkg/utils"
 	"github_spiders/spiders/github_com"
 	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
+	"github_spiders/spiders/types"
 	"log"
 )
 
@@ -23,7 +24,7 @@ type UsersByRepo struct {
 func (ur *UsersByRepo) Callbacks() {
 	// 初始化变量
 	auth := user.NewAuth()
-	collector := collectors.GetInstance(TagUser)
+	collector := collectors.GetInstance(TagRepo)
 
 	// 对要提交的请求进行处理
 	collector.OnRequest(func(r *colly.Request) {
@@ -36,7 +37,8 @@ func (ur *UsersByRepo) Callbacks() {
 
 	//  返回数据处理
 	collector.OnResponse(func(resp *colly.Response) {
-		users, err := utils.JsonUnmarshalBody(resp.Body)
+		users := types.Users{}
+		err := json.Unmarshal(resp.Body, &users)
 		if err != nil {
 			log.Printf("err: Failed to unmarshal the json: %s", err)
 			return
@@ -49,14 +51,14 @@ func (ur *UsersByRepo) Callbacks() {
 		}
 
 		var userName, starViewUrl string
-		for _, u := range users {
+		for _, user := range users {
 			// 有关用户的一些信息，想要什么值可以自己取
-			userName = u["login"].(string)
-			starViewUrl = u["url"].(string) + "/starred"
+			userName = user.Login
+			starViewUrl = user.URL + "/starred"
 			log.Printf("【New User】 Name:%s, URL:%s", userName, starViewUrl)
 			starViewUrl = common.CheckUrl(starViewUrl)
 			// _ = queued.GetInstance(TagRepo).Visit(starViewUrl)
-			_ = queued.GetInstance(TagRepo).AddURL(starViewUrl)
+			_ = queued.GetInstance(TagUser).AddURL(starViewUrl)
 		}
 
 		// 下一页
@@ -65,25 +67,26 @@ func (ur *UsersByRepo) Callbacks() {
 			return
 		}
 		// _ = resp.Request.Visit(url)
-		_ = queued.GetInstance(TagUser).AddURL(starViewUrl)
+		_ = queued.GetInstance(TagRepo).AddURL(url)
 	})
 
 	// 错误处理
 	collector.OnError(func(resp *colly.Response, err error) {
 		github_com.ErrLock.Lock()
 		defer github_com.ErrLock.Unlock()
+		instance := queued.GetInstance(TagRepo)
 		validity, t := auth.CheckTokenValidity(resp)
 		if !validity {
 			log.Printf("Token or IP is temporarily blocked, "+
 				"unblock time is: %s Trying to change Token", t)
 			auth.NextToken()
 			auth.DelToken(resp.Request.Headers)
-			_ = resp.Request.Retry()
+			_ = instance.AddRequest(resp.Request)
 			return
 		}
 		log.Println("Failed to initiate request, " +
 			"task has been sent back to queue, waiting for retry.")
-		_ = resp.Request.Retry()
+		_ = instance.AddRequest(resp.Request)
 		return
 	})
 }

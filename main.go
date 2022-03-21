@@ -18,18 +18,18 @@ func main() {
 
 	urls := map[string][]string{
 		callbacks.TagRepo: {
-			"https://api.github.com/users/asciimoo/starred",
-			"https://api.github.com/users/LinuxMercedes/starred",
-			"https://api.github.com/users/brson/starred",
-			"https://api.github.com/users/avelino/starred",
-			"https://api.github.com/users/Kikobeats/starred",
-		},
-		callbacks.TagUser: {
 			"https://api.github.com/repos/golang/go/stargazers",
 			"https://api.github.com/repos/laravel/laravel/stargazers",
 			"https://api.github.com/repos/torvalds/linux/stargazers",
 			"https://api.github.com/repos/atom/atom/stargazers",
 			"https://api.github.com/repos/browserless/chrome/stargazers",
+		},
+		callbacks.TagUser: {
+			"https://api.github.com/users/asciimoo/starred",
+			"https://api.github.com/users/LinuxMercedes/starred",
+			"https://api.github.com/users/brson/starred",
+			"https://api.github.com/users/avelino/starred",
+			"https://api.github.com/users/Kikobeats/starred",
 		},
 	}
 

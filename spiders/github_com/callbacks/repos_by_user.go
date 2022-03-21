@@ -30,7 +30,7 @@ type ReposByUser struct {
 func (ru *ReposByUser) Callbacks() {
 	// 初始化变量
 	auth := user.NewAuth()
-	collector := collectors.GetInstance(TagRepo)
+	collector := collectors.GetInstance(TagUser)
 	// elasticClient, err := elastic.NewClient(config.ElasticOptions...)
 	// if err != nil {
 	// 	panic(err)
@@ -47,7 +47,8 @@ func (ru *ReposByUser) Callbacks() {
 
 	//  返回数据处理
 	collector.OnResponse(func(resp *colly.Response) {
-		repos, err := utils.JsonUnmarshalBody(resp.Body)
+		repos := types.Repos{}
+		err := json.Unmarshal(resp.Body, &repos)
 		if err != nil {
 			log.Printf("err: Failed to unmarshal the json: %s", err)
 			return
@@ -69,10 +70,10 @@ func (ru *ReposByUser) Callbacks() {
 		for _, repo := range repos {
 			// 有关仓库的一些信息，想要什么值可以自己取
 			// repoID = strconv.FormatUint(uint64(repo["id"].(float64)), 10)
-			repoName = repo["full_name"].(string)
+			repoName = repo.FullName
 			// repoURL = repo["html_url"].(string)
 			// repoApiURL = repo["url"].(string)
-			repoStarURL = repo["stargazers_url"].(string)
+			repoStarURL = repo.StargazersURL
 			// repoStarCount = uint64(repo["stargazers_count"].(float64))
 			log.Printf("【New Repo】 Name:%s, URL:%s", repoName, repoStarURL)
 
@@ -95,8 +96,7 @@ func (ru *ReposByUser) Callbacks() {
 			// }
 
 			repoStarURL = common.CheckUrl(repoStarURL)
-			// _ = collectors.GetInstance(TagUser).Visit(repoStarURL)
-			_ = queued.GetInstance(TagUser).AddURL(repoStarURL)
+			_ = queued.GetInstance(TagRepo).AddURL(repoStarURL)
 		}
 
 		// 下一页
@@ -104,22 +104,26 @@ func (ru *ReposByUser) Callbacks() {
 		if url == "" {
 			return
 		}
-		// _ = resp.Request.Visit(url)
-		_ = queued.GetInstance(TagRepo).AddURL(url)
+		_ = queued.GetInstance(TagUser).AddURL(url)
 	})
 
 	// 错误处理
 	collector.OnError(func(resp *colly.Response, err error) {
 		github_com.ErrLock.Lock()
 		defer github_com.ErrLock.Unlock()
+		instance := queued.GetInstance(TagUser)
 		validity, t := auth.CheckTokenValidity(resp)
 		if !validity {
 			log.Printf("Toktn or IP is temporarily blocked, "+
 				"unblock time is: %s Trying to change Token", t)
 			auth.NextToken()
 			auth.DelToken(resp.Request.Headers)
-			_ = resp.Request.Retry()
+			_ = instance.AddRequest(resp.Request)
 		}
+		log.Println("Failed to initiate request, " +
+			"task has been sent back to queue, waiting for retry.")
+		_ = instance.AddRequest(resp.Request)
+		return
 	})
 }
 
