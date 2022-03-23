@@ -11,8 +11,14 @@ var (
 	lock     sync.Mutex
 )
 
+var threadsMap map[string]int
+
 func init() {
 	instance = make(map[string]*queue.Queue)
+	threadsMap = map[string]int{
+		"repo": 1,
+		"user": 20,
+	}
 }
 
 // GetInstance 获取指定的队列..
@@ -26,7 +32,7 @@ func GetInstance(tag string) *queue.Queue {
 		defer lock.Unlock()
 		if instance[tag] == nil {
 			redisStorage := storage.GetRedisStorage(tag)
-			instance[tag], err = queue.New(1, &redisStorage)
+			instance[tag], err = queue.New(threadsMap[tag], &redisStorage)
 			if err != nil {
 				panic(err)
 			}

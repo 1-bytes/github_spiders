@@ -10,6 +10,7 @@ import (
 	"github_spiders/spiders/types"
 	"log"
 	"strconv"
+	"time"
 )
 
 const TagRepo = "repo"
@@ -57,6 +58,7 @@ func (u *UsersByRepo) Callbacks() {
 			if err = u.SaveData("github_users", id, user); err != nil {
 				log.Printf("Failed to store data in Elasticsearch, error: %s", err)
 			} else {
+				time.Sleep(time.Second)
 				log.Printf("【New User】 Name:%s, URL:%s", user.Login, user.URL+"/starred")
 			}
 			_ = queued.GetInstance(TagUser).AddURL(u.CheckUrl(user.URL + "/starred"))
