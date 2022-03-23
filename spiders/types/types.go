@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/gocolly/colly/v2"
 	"time"
 )
 
@@ -16,29 +15,9 @@ type GitHubUser struct {
 	Users []User
 }
 
-type GitHubCollector struct {
-	ReposByUserC *colly.Collector
-	UsersByRepoC *colly.Collector
-}
-
-type ElasticIndexConfig struct {
-	Index string
-	Item  Item
-}
-
-type Item struct {
-	RepoID        string
-	RepoName      string
-	RepoURL       string
-	RepoApiURL    string
-	ReadmeURL     string
-	RepoStarCount uint64
-	Readme        string
-}
-
-type Users []struct {
+type JsonUsers []struct {
 	Login             string `json:"login"`
-	ID                int    `json:"id"`
+	ID                int64  `json:"id"`
 	NodeID            string `json:"node_id"`
 	AvatarURL         string `json:"avatar_url"`
 	GravatarID        string `json:"gravatar_id"`
@@ -57,8 +36,8 @@ type Users []struct {
 	SiteAdmin         bool   `json:"site_admin"`
 }
 
-type Repos []struct {
-	ID       int    `json:"id"`
+type JsonRepos []struct {
+	ID       int64  `json:"id"`
 	NodeID   string `json:"node_id"`
 	Name     string `json:"name"`
 	FullName string `json:"full_name"`
@@ -160,5 +139,5 @@ type Repos []struct {
 	OpenIssues    int           `json:"open_issues"`
 	Watchers      int           `json:"watchers"`
 	DefaultBranch string        `json:"default_branch"`
-	Readme        string        `json:"-"`
+	OtherData     interface{}   `json:"other_data"`
 }

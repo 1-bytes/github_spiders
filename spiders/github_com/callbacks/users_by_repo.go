@@ -6,10 +6,10 @@ import (
 	"github_spiders/pkg/collectors"
 	"github_spiders/pkg/queued"
 	"github_spiders/spiders/github_com"
-	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
 	"github_spiders/spiders/types"
 	"log"
+	"strconv"
 )
 
 const TagRepo = "repo"
@@ -18,10 +18,11 @@ const TagRepo = "repo"
 // GitHub API docs url:
 // https://docs.github.com/cn/rest/reference/activity#list-stargazers
 type UsersByRepo struct {
+	BasicCallback
 }
 
 // Callbacks 爬虫回调函数.
-func (ur *UsersByRepo) Callbacks() {
+func (u *UsersByRepo) Callbacks() {
 	// 初始化变量
 	auth := user.NewAuth()
 	collector := collectors.GetInstance(TagRepo)
@@ -37,7 +38,7 @@ func (ur *UsersByRepo) Callbacks() {
 
 	//  返回数据处理
 	collector.OnResponse(func(resp *colly.Response) {
-		users := types.Users{}
+		users := types.JsonUsers{}
 		err := json.Unmarshal(resp.Body, &users)
 		if err != nil {
 			log.Printf("err: Failed to unmarshal the json: %s", err)
@@ -50,24 +51,21 @@ func (ur *UsersByRepo) Callbacks() {
 			return
 		}
 
-		var userName, starViewUrl string
 		for _, user := range users {
 			// 有关用户的一些信息，想要什么值可以自己取
-			userName = user.Login
-			starViewUrl = user.URL + "/starred"
-			log.Printf("【New User】 Name:%s, URL:%s", userName, starViewUrl)
-			starViewUrl = common.CheckUrl(starViewUrl)
-			// _ = queued.GetInstance(TagRepo).Visit(starViewUrl)
-			_ = queued.GetInstance(TagUser).AddURL(starViewUrl)
+			id := strconv.FormatInt(user.ID, 10)
+			if err = u.SaveData("github_users", id, user); err != nil {
+				log.Printf("Failed to store data in Elasticsearch, error: %s", err)
+			} else {
+				log.Printf("【New User】 Name:%s, URL:%s", user.Login, user.URL+"/starred")
+			}
+			_ = queued.GetInstance(TagUser).AddURL(u.CheckUrl(user.URL + "/starred"))
 		}
 
 		// 下一页
-		url := common.GetNextPageUrl(resp.Request, userLen)
-		if url == "" {
-			return
+		if url := u.GetNextPageUrl(resp.Request, userLen); url != "" {
+			_ = queued.GetInstance(TagRepo).AddURL(url)
 		}
-		// _ = resp.Request.Visit(url)
-		_ = queued.GetInstance(TagRepo).AddURL(url)
 	})
 
 	// 错误处理
@@ -87,6 +85,5 @@ func (ur *UsersByRepo) Callbacks() {
 		log.Println("Failed to initiate request, " +
 			"task has been sent back to queue, waiting for retry.")
 		_ = instance.AddRequest(resp.Request)
-		return
 	})
 }

@@ -1,8 +1,11 @@
-package common
+package callbacks
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/gocolly/colly/v2"
+	"github_spiders/pkg/elastic"
 	"github_spiders/spiders/types"
 	"io"
 	"io/ioutil"
@@ -12,7 +15,15 @@ import (
 	"sync/atomic"
 )
 
-func CheckUrl(u string) string {
+var Tags = map[string]string{
+	TagRepo: "repo",
+	TagUser: "user",
+}
+
+type BasicCallback struct {
+}
+
+func (*BasicCallback) CheckUrl(u string) string {
 	parse, _ := url.Parse(u)
 	params, _ := url.ParseQuery(parse.RawQuery)
 	if params.Has("per_page") {
@@ -27,7 +38,7 @@ func CheckUrl(u string) string {
 }
 
 // GetNextPageUrl 获取下一页要请求的链接.
-func GetNextPageUrl(r *colly.Request, dataLen int) string {
+func (*BasicCallback) GetNextPageUrl(r *colly.Request, dataLen int) string {
 	params := r.URL.Query()
 	perPage, err := strconv.Atoi(params.Get("per_page"))
 	if err != nil {
@@ -48,7 +59,7 @@ func GetNextPageUrl(r *colly.Request, dataLen int) string {
 }
 
 // Fetcher 获取指定网页内容.
-func Fetcher(url string, headers *http.Header) ([]byte, error) {
+func (*BasicCallback) Fetcher(url string, headers *http.Header) ([]byte, error) {
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	req.Header = *headers
 	resp, err := (&http.Client{}).Do(req)
@@ -65,4 +76,17 @@ func Fetcher(url string, headers *http.Header) ([]byte, error) {
 		)
 	}
 	return ioutil.ReadAll(resp.Body)
+}
+
+// SaveData 保存数据.
+func (*BasicCallback) SaveData(index string, id string, data interface{}) error {
+	j, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = elastic.GetInstance().Index().
+		Index(index).
+		BodyJson(string(j)).
+		Id(id).Do(context.Background())
+	return err
 }

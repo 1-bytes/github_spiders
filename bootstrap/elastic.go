@@ -2,14 +2,14 @@ package bootstrap
 
 import (
 	"github.com/olivere/elastic/v7"
-	configs "github_spiders/config"
 	"github_spiders/pkg/config"
+	pkgelastic "github_spiders/pkg/elastic"
 	"time"
 )
 
 // SetupElastic 初始化 Elastic.
 func SetupElastic() {
-	configs.ElasticOptions = []elastic.ClientOptionFunc{
+	pkgelastic.Options = []elastic.ClientOptionFunc{
 		elastic.SetURL(config.GetString("elastic.github.host")),
 		elastic.SetBasicAuth(
 			config.GetString("elastic.github.username"),

@@ -1,11 +1,8 @@
 package config
 
 import (
-	"github.com/olivere/elastic/v7"
 	"github_spiders/pkg/config"
 )
-
-var ElasticOptions []elastic.ClientOptionFunc
 
 func init() {
 	config.Add("elastic", config.StrMap{

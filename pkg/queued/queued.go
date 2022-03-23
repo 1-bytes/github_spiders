@@ -21,11 +21,15 @@ func GetInstance(tag string) *queue.Queue {
 		return instance[tag]
 	}
 	return func(tag string) *queue.Queue {
+		var err error
 		lock.Lock()
 		defer lock.Unlock()
 		if instance[tag] == nil {
 			redisStorage := storage.GetRedisStorage(tag)
-			instance[tag], _ = queue.New(1, &redisStorage)
+			instance[tag], err = queue.New(1, &redisStorage)
+			if err != nil {
+				panic(err)
+			}
 		}
 		return instance[tag]
 	}(tag)

@@ -1,21 +1,19 @@
 package callbacks
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gocolly/colly/v2"
-	"github.com/olivere/elastic/v7"
 	"github_spiders/pkg/collectors"
 	"github_spiders/pkg/encoding/base64"
 	"github_spiders/pkg/queued"
 	"github_spiders/pkg/utils"
 	"github_spiders/spiders/github_com"
-	"github_spiders/spiders/github_com/common"
 	"github_spiders/spiders/github_com/user"
 	"github_spiders/spiders/types"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 const TagUser = "user"
@@ -24,17 +22,14 @@ const TagUser = "user"
 // GitHub API docs url:
 // https://docs.github.com/cn/rest/reference/activity#list-repositories-starred-by-a-user
 type ReposByUser struct {
+	BasicCallback
 }
 
 // Callbacks 爬虫回调函数.
-func (ru *ReposByUser) Callbacks() {
+func (r *ReposByUser) Callbacks() {
 	// 初始化变量
 	auth := user.NewAuth()
 	collector := collectors.GetInstance(TagUser)
-	// elasticClient, err := elastic.NewClient(config.ElasticOptions...)
-	// if err != nil {
-	// 	panic(err)
-	// }
 
 	// 对要提交的请求进行处理
 	collector.OnRequest(func(r *colly.Request) {
@@ -47,7 +42,7 @@ func (ru *ReposByUser) Callbacks() {
 
 	//  返回数据处理
 	collector.OnResponse(func(resp *colly.Response) {
-		repos := types.Repos{}
+		repos := types.JsonRepos{}
 		err := json.Unmarshal(resp.Body, &repos)
 		if err != nil {
 			log.Printf("err: Failed to unmarshal the json: %s", err)
@@ -59,52 +54,33 @@ func (ru *ReposByUser) Callbacks() {
 			return
 		}
 
-		var (
-			// repoID        string
-			repoName string
-			// repoURL       string
-			// repoApiURL    string
-			repoStarURL string
-			// repoStarCount uint64
-		)
 		for _, repo := range repos {
-			// 有关仓库的一些信息，想要什么值可以自己取
-			// repoID = strconv.FormatUint(uint64(repo["id"].(float64)), 10)
-			repoName = repo.FullName
-			// repoURL = repo["html_url"].(string)
-			// repoApiURL = repo["url"].(string)
-			repoStarURL = repo.StargazersURL
-			// repoStarCount = uint64(repo["stargazers_count"].(float64))
-			log.Printf("【New Repo】 Name:%s, URL:%s", repoName, repoStarURL)
+			// 有关仓库的一些信息
+			readme, readmeAPI, err := r.GetReadme(repo.FullName)
+			if err != nil {
+				continue
+			}
+			repo.OtherData = struct {
+				ReadmeAPI string `json:"readme_api"`
+				Readme    string `json:"readme"`
+			}{
+				ReadmeAPI: readmeAPI,
+				Readme:    readme,
+			}
 
-			// // 获取 Readme.md 的数据并存储
-			// readme, url, _ := GetReadme(repoName)
-			// err = SaveData(elasticClient, types.ElasticIndexConfig{
-			// 	Index: "github_readme",
-			// 	Item: types.Item{
-			// 		RepoID:        repoID,
-			// 		RepoName:      repoName,
-			// 		RepoURL:       repoURL,
-			// 		RepoApiURL:    repoApiURL,
-			// 		RepoStarCount: repoStarCount,
-			// 		ReadmeURL:     url,
-			// 		Readme:        readme,
-			// 	},
-			// })
-			// if err != nil {
-			// 	log.Printf("Failed to store data in Elasticsearch, error: %s", err)
-			// }
-
-			repoStarURL = common.CheckUrl(repoStarURL)
-			_ = queued.GetInstance(TagRepo).AddURL(repoStarURL)
+			id := strconv.FormatInt(repo.ID, 10)
+			if err = r.SaveData("github_repos", id, repo); err != nil {
+				log.Printf("Failed to store data in Elasticsearch, error: %s", err)
+			} else {
+				log.Printf("【New Repo】 Name:%s, URL:%s", repo.FullName, repo.StargazersURL)
+			}
+			_ = queued.GetInstance(TagRepo).AddURL(r.CheckUrl(repo.StargazersURL))
 		}
 
 		// 下一页
-		url := common.GetNextPageUrl(resp.Request, repoLen)
-		if url == "" {
-			return
+		if url := r.GetNextPageUrl(resp.Request, repoLen); url != "" {
+			_ = queued.GetInstance(TagUser).AddURL(url)
 		}
-		_ = queued.GetInstance(TagUser).AddURL(url)
 	})
 
 	// 错误处理
@@ -123,33 +99,18 @@ func (ru *ReposByUser) Callbacks() {
 		log.Println("Failed to initiate request, " +
 			"task has been sent back to queue, waiting for retry.")
 		_ = instance.AddRequest(resp.Request)
-		return
 	})
 }
 
-// SaveData 保存数据.
-func SaveData(client *elastic.Client, cfg types.ElasticIndexConfig) error {
-	return nil
-	data, err := json.Marshal(cfg.Item)
-	if err != nil {
-		return err
-	}
-	_, err = client.Index().
-		Index(cfg.Index).
-		BodyJson(string(data)).
-		Id(cfg.Item.RepoID).Do(context.Background())
-	return err
-}
-
 // GetReadme 获取 Readme.md 文件的内容.
-func GetReadme(fullName string) (string, string, error) {
+func (r *ReposByUser) GetReadme(fullName string) (string, string, error) {
 	header := &http.Header{}
 	auth := user.NewAuth()
 	header.Add("Accept", "application/vnd.github.v3+json")
 	header = auth.AddToken(header)
 
 	url := fmt.Sprintf("https://api.github.com/repos/%s/readme", fullName)
-	fetch, err := common.Fetcher(url, header)
+	fetch, err := r.Fetcher(url, header)
 	if err != nil {
 		return "", "", err
 	}

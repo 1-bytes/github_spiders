@@ -34,12 +34,16 @@ func GetInstance(tag string) *colly.Collector {
 		return collectorInstance[tag]
 	}
 	return func(tag string) *colly.Collector {
+		var err error
 		lock.Lock()
 		defer lock.Unlock()
 		if collectorInstance[tag] == nil {
 			collectorInstance[tag] = cfg.Create()
 			redisStorage := storage.GetRedisStorage(tag)
-			_ = collectorInstance[tag].SetStorage(&redisStorage)
+			err = collectorInstance[tag].SetStorage(&redisStorage)
+			if err != nil {
+				panic(err)
+			}
 		}
 		return collectorInstance[tag]
 	}(tag)
