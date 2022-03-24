@@ -95,6 +95,7 @@ func (r *ReposByUser) Callbacks() {
 			auth.NextToken()
 			auth.DelToken(resp.Request.Headers)
 			_ = instance.AddRequest(resp.Request)
+			return
 		}
 		log.Println("Failed to initiate request, " +
 			"task has been sent back to queue, waiting for retry.")

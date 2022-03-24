@@ -37,6 +37,9 @@ func main() {
 	queues := make(map[string]*queue.Queue)
 	for _, tag := range callbacks.Tags {
 		queues[tag] = queued.GetInstance(tag)
+		if s, _ := queues[tag].Size(); s < 20 {
+			continue
+		}
 		for _, url := range urls[tag] {
 			_ = queues[tag].AddURL(url)
 		}
