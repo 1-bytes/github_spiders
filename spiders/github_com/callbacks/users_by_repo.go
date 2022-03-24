@@ -77,8 +77,8 @@ func (u *UsersByRepo) Callbacks() {
 		instance := queued.GetInstance(TagRepo)
 		validity, t := auth.CheckTokenValidity(resp)
 		if !validity {
-			log.Printf("Token or IP is temporarily blocked, "+
-				"unblock time is: %s Trying to change Token", t)
+			log.Printf("Token[%d] or IP is temporarily blocked, "+
+				"unblock time is: %s Trying to change Token", auth.Index, t)
 			auth.NextToken()
 			auth.DelToken(resp.Request.Headers)
 			_ = instance.AddRequest(resp.Request)

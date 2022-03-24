@@ -4,6 +4,7 @@ import (
 	"github.com/gocolly/colly/v2"
 	configs "github_spiders/pkg/config"
 	"github_spiders/spiders/types"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -84,7 +85,7 @@ func (a *auth) NextToken() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	currTime := time.Now().Unix()
-	if 6 > currTime-a.LastSwitchingTime {
+	if 10 > currTime-a.LastSwitchingTime {
 		return
 	}
 	a.LastSwitchingTime = currTime
@@ -93,6 +94,9 @@ func (a *auth) NextToken() {
 	if int(a.Index) >= maxCount { // 检查是否到最后一条 Token 了
 		a.Index = 0
 	}
+	log.Printf("\n\n-------------------------------------------\n"+
+		"[TOKEN] change token, new index: %d"+
+		"\n-------------------------------------------\n\n", a.Index)
 }
 
 // CheckTokenValidity 检查 token 是否被封禁
