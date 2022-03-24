@@ -17,7 +17,7 @@ func init() {
 	instance = make(map[string]*queue.Queue)
 	threadsMap = map[string]int{
 		"repo": 1,
-		"user": 10,
+		"user": 15,
 	}
 }
 

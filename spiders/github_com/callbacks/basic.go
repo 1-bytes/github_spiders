@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gocolly/colly/v2"
+	configs "github_spiders/pkg/config"
 	"github_spiders/pkg/elastic"
 	"github_spiders/spiders/types"
 	"io"
@@ -59,10 +60,17 @@ func (*BasicCallback) GetNextPageUrl(r *colly.Request, dataLen int) string {
 }
 
 // Fetcher 获取指定网页内容.
-func (*BasicCallback) Fetcher(url string, headers *http.Header) ([]byte, error) {
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
+func (*BasicCallback) Fetcher(u string, headers *http.Header) ([]byte, error) {
+	urli := url.URL{}
+	urlProxy, _ := urli.Parse(configs.GetString("spiders.github.socks5", nil))
+
+	req, _ := http.NewRequest(http.MethodGet, u, nil)
 	req.Header = *headers
-	resp, err := (&http.Client{}).Do(req)
+	resp, err := (&http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyURL(urlProxy),
+		},
+	}).Do(req)
 	if err != nil {
 		return nil, err
 	}
