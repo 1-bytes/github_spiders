@@ -2,6 +2,7 @@ package queued
 
 import (
 	"github.com/gocolly/colly/v2/queue"
+	"github_spiders/pkg/config"
 	"github_spiders/pkg/storage"
 	"sync"
 )
@@ -16,8 +17,8 @@ var threadsMap map[string]int
 func init() {
 	instance = make(map[string]*queue.Queue)
 	threadsMap = map[string]int{
-		"repo": 1,
-		"user": 15,
+		"repo": config.GetInt("spiders.github.threads.usersByRepo"),
+		"user": config.GetInt("spiders.github.threads.reposByUser"),
 	}
 }
 
